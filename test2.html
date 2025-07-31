@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>뽀모도로 스터디 플래너</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 네비게이션 바 */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            transform: translateY(-60px);
+            transition: transform 0.3s ease;
+        }
+
+        .navbar:hover, .navbar.active {
+            transform: translateY(0);
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 40px;
+        }
+
+        .nav-item {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .nav-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+        }
+
+        /* 컨테이너 */
+        .container {
+            margin-top: 100px;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 20px;
+        }
+
+        .page {
+            display: none;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .page-title {
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* 학습계획 페이지 */
+        .subject-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .subject-card {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+        }
+
+        .subject-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .subject-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .subject-emoji {
+            font-size: 24px;
+        }
+
+        .time-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .time-selector label {
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        .time-selector select {
+            padding: 10px 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+
+        .time-selector select:focus {
+            outline: none;
+            border-color: #4ecdc4;
+        }
+
+        .pomodoro-display {
+            background: #4ecdc4;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        /* 시간표 페이지 */
+        .timetable {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .schedule-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .day-header {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .time-slot {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 8px;
+            text-align: center;
+            font-size: 12px;
+            min-height: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .time-slot.school {
+            background: #e8f5e8;
+            border-color: #4ecdc4;
+        }
+
+        .time-slot.study {
+            background: #fff3cd;
+            border-color: #ffc107;
+        }
+
+        .time-slot.break {
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+
+        /* 타이머 페이지 */
+        .timer-container {
+            text-align: center;
+            padding: 50px;
+        }
+
+        .timer-display {
+            font-size: 72px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .timer-status {
+            font-size: 24px;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .timer-controls {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .timer-btn {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .timer-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .timer-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 스케줄 설정 페이지 */
+        .schedule-settings {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .settings-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #4ecdc4;
+            padding-bottom: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-group select:focus {
+            outline: none;
+            border-color: #4ecdc4;
+        }
+
+        .schedule-builder {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .schedule-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr auto;
+            gap: 10px;
+            align-items: end;
+            margin-bottom: 15px;
+        }
+
+        .add-btn {
+            background: #4ecdc4;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .schedule-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .schedule-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #e8f5e8;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .remove-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        /* 평가 패널 */
+        .evaluation-panel {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+        }
+
+        .evaluation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .eval-card {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .eval-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .eval-status {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .status-good { background: #4ecdc4; }
+        .status-warning { background: #ffd93d; color: #333; }
+        .status-danger { background: #ff6b6b; }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .nav-menu {
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+            
+            .nav-item {
+                font-size: 14px;
+                padding: 10px 20px;
+            }
+            
+            .subject-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .schedule-settings {
+                grid-template-columns: 1fr;
+            }
+            
+            .timer-display {
+                font-size: 48px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="nav-menu">
+            <button class="nav-item active" onclick="showPage('study-plan')">📚 학습계획</button>
+            <button class="nav-item" onclick="showPage('timetable')">📅 시간표</button>
+            <button class="nav-item" onclick="showPage('timer')">🍅 타이머</button>
+            <button class="nav-item" onclick="showPage('schedule')">⚙️ 스케줄 설정</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div id="study-plan" class="page active">
+            <h1 class="page-title">📚 과목별 학습 계획</h1>
+            
+            <div class="subject-grid">
+                <div class="subject-card">
+                    <div class="subject-title">
+                        <span class="subject-emoji">📖</span>
+                        국어
+                    </div>
+                    <div class="time-selector">
+                        <div>
+                            <label>평일 학습시간</label>
+                            <select id="korean-weekday" onchange="updatePomodoroCount('korean')">
+                                <option value="0">학습하지 않음</option>
+                                <option value="30">30분</option>
+                                <option value="60" selected>1시간</option>
+                                <option value="90">1시간 30분</option>
+                                <option value="120">2시간</option>
+                                <option value="150">2시간 30분</option>
+                                <option value="180">3시간</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>주말 학습시간</label>
+                            <select id="korean-weekend" onchange="updatePomodoroCount('korean')">
+                                <option value="0">학습하지 않음</option>
+                                <option value="30">30분</option>
+                                <option value="60">1시간</option>
+                                <option value="90">1시간 30분</option>
+                                <option value="120" selected>2시간</option>
+                                <option value="150">2시간 30분</option>
+                                <option value="180">3시간</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="pomodoro-display" id="korean-pomodoro">
+                        평일: 2뽀모도로 | 주말: 4뽀모도로
+                    </div>
+                </div>
+
+                <div class="subject-card">
+                    <div class="subject-title">
+                        <span class="subject-emoji">🌍</span>
+                        영어
+                    </div>
+                    <div class="time-selector">
+                        <div>
+                            <label>평일 학습시간</label>
+                            <select id="english-weekday" onchange="updatePomodoroCount('english')">
+                                <option value="0">학습하지 않음</option>
+                                <option value="30">30분</option>
+                                <option value="60" selected>1시간</option>
+                                <option value="90">1시간 30분</option>
+                                <option value="120">2시간</option>
+                                <option value="150">2시간 30분</option>
+                                <option value="180">3시간</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>주말 학습시간</label>
+                            <select id="english-weekend" onchange="updatePomodoroCount('english')">
+                                <option value="0">학습하지 않음</option>
+                                <option value="30">30분</option>
+                                <option value="60">1시간</option>
+                                <option value="90">1시간 30분</option>
+                                <option value="120" selected>2시간</option>
+                                <option value="150">2시간 30분</option>
+                                <option value="180">3시간</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="pomodoro-display" id="english-pomodoro">
+                        평일: 2뽀모도로 | 주말: 4뽀모도로
+                    </div>
+                </div>
+
+                <div class="subject-card">
+                    <div class="subject-title">
+                        <span class="subject-emoji">🔢</span>
+                        수학
+                    </div>
+                    <div class="time-selector">
+                        <div>
+                            <label>평일 학습시간</label>
+                            <select id="math-weekday" onchange="updatePomodoroCount('math')">
+                                <option value="0">학습하지 않음</option>
+                                <option value="30">30분</option>
+                                <option value="60">1시간</option>
+                                <option value="90" selected>1시간 30분</option>
+                                <option value="120">2시간</option>
+                                <option value="150">2시간 30분</option>
+                                <option value="180">3시간</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>주말 학습시간</label>
+                            <select id="math-weekend" onchange="updatePomodoroCount('math')">
+                                <option value="0">학습하지 않음</option>
+                                <option value="30">30분</option>
+                                <option value="60">1시간</option>
+                                <option value="90">1시간 30분</option>
+                                <option value="120">2시간</option>
+                                <option value="150" selected>2시간 30분</option>
+                                <option value="180">3시간</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="pomodoro-display" id="math-pomodoro">
+                        평일: 3뽀모도로 | 주말: 5뽀모도로
+                    </div>
+                </div>
+
+                <div class="subject-card">
+                    <div class="subject-title">
+                        <span class="subject-emoji">🏛️</span>
+                        사회
+                    </div>
+                    <div class="time-selector">
+                        <div>
+                            <label>평일 학습시간</label>
+                            <select id="social-weekday" onchange="updatePomodoroCount('social')">
+                                <option value="0">학습하지 않음</option>
+                                <option value="30" selected>30분</option>
+                                <option value="60">1시간</option>
+                                <option value="90">1시간 30분</option>
+                                <option value="120">2시간</option>
+                                <option value="150">2시간 30분</option>
+                                <option value="180">3시간</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>주말 학습시간</label>
+                            <select id="social-weekend" onchange="updatePomodoroCount('social')">
+                                <option value="0">학습하지 않음</option>
+                                <option value="30">30분</option>
+                                <option value="60" selected>1시간</option>
+                                <option value="90">1시간 30분</option>
+                                <option value="120">2시간</option>
+                                <option value="150">2시간 30분</option>
+                                <option value="180">3시간</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="pomodoro-display" id="social-pomodoro">
+                        평일: 1뽀모도로 | 주말: 2뽀모도로
+                    </div>
+                </div>
+
+                <div class="subject-card">
+                    <div class="subject-title">
+                        <span class="subject-emoji">🔬</span>
+                        과학
+                    </div>
+                    <div class="time-selector">
+                        <div>
+                            <label>평일 학습시간</label>
+                            <select id="science-weekday" onchange="updatePomodoroCount('science')">
+                                <option value="0">학습하지 않음</option>
+                                <option value="30" selected>30분</option>
+                                <option value="60">1시간</option>
+                                <option value="90">1시간 30분</option>
+                                <option value="120">2시간</option>
+                                <option value="150">2시간 30분</option>
+                                <option value="180">3시간</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>주말 학습시간</label>
+                            <select id="science-weekend" onchange="updatePomodoroCount('science')">
+                                <option value="0">학습하지 않음</option>
+                                <option value="30">30분</option>
+                                <option value="60" selected>1시간</option>
+                                <option value="90">1시간 30분</option>
+                                <option value="120">2시간</option>
+                                <option value="150">2시간 30분</option>
+                                <option value="180">3시간</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="pomodoro-display" id="science-pomodoro">
+                        평일: 1뽀모도로 | 주말: 2뽀모도로
+                    </div>
+                </div>
+
+                <div class="subject-card">
+                    <div class="subject-title">
+                        <span class="subject-emoji">🏺</span>
+                        한국사
+                    </div>
+                    <div class="time-selector">
+                        <div>
+                            <label>평일 학습시간</label>
+                            <select id="history-weekday" onchange="updatePomodoroCount('history')">
+                                <option value="0" selected>학습하지 않음</option>
+                                <option value="30">30분</option>
+                                <option value="60">1시간</option>
+                                <option value="90">1시간 30분</option>
+                                <option value="120">2시간</option>
+                                <option value="150">2시간 30분</option>
+                                <option value="180">3시간</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>주말 학습시간</label>
+                            <select id="history-weekend" onchange="updatePomodoroCount('history')">
+                                <option value="0">학습하지 않음</option>
+                                <option value="30">30분</option>
+                                <option value="60" selected>1시간</option>
+                                <option value="90">1시간 30분</option>
+                                <option value="120">2시간</option>
+                                <option value="150">2시간 30분</option>
+                                <option value="180">3시간</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="pomodoro-display" id="history-pomodoro">
+                        평일: 0뽀모도로 | 주말: 2뽀모도로
+                    </div>
+                </div>
+            </div>
+
+            <div class="evaluation-panel">
+                <h2 style="text-align: center; margin-bottom: 20px;">📊 학습 현황 분석</h2>
+                <div class="evaluation-grid">
+                    <div class="eval-card">
+                        <div class="eval-title">주간 총 학습시간</div>
+                        <div class="eval-status status-good" id="totalStudyTime">
+                            분석 대기중
+                        </div>
+                        <div id="totalStudyAdvice">과목별 학습시간을 설정해주세요.</div>
+                    </div>
+                    
+                    <div class="eval-card">
+                        <div class="eval-title">학습 균형도</div>
+                        <div class="eval-status status-good" id="studyBalance">
+                            분석 대기중
+                        </div>
+                        <div id="balanceAdvice">과목간 학습시간 균형을 분석합니다.</div>
+                    </div>
+                    
+                    <div class="eval-card">
+                        <div class="eval-title">뽀모도로 효율성</div>
+                        <div class="eval-status status-good" id="pomodoroEfficiency">
+                            분석 대기중
+                        </div>
+                        <div id="efficiencyAdvice">뽀모도로 기법의 효율성을 평가합니다.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="timetable" class="page">
+            <h1 class="page-title">📅 학교 및 개인 시간표</h1>
+            
+            <div class="timetable">
+                <h3 style="margin-bottom: 20px;">🏫 학교 기본 시간표</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div class="time-slot school">
+                        <strong>1교시</strong><br>08:30 - 09:20
+                    </div>
+                    <div class="time-slot school">
+                        <strong>2교시</strong><br>09:30 - 10:20
+                    </div>
+                    <div class="time-slot school">
+                        <strong>3교시</strong><br>10:30 - 11:20
+                    </div>
+                    <div class="time-slot school">
+                        <strong>4교시</strong><br>11:30 - 12:20
+                    </div>
+                    <div class="time-slot break">
+                        <strong>점심시간</strong><br>12:20 - 13:30
+                    </div>
+                    <div class="time-slot school">
+                        <strong>5교시</strong><br>13:30 - 14:20
+                    </div>
+                    <div class="time-slot school">
+                        <strong>6교시</strong><br>14:30 - 15:20
+                    </div>
+                    <div class="time-slot school">
+                        <strong>7교시</strong><br>15:30 - 16:20
+                    </div>
+                    <div class="time-slot study">
+                        <strong>야자 1차</strong><br>16:40 - 17:30
+                    </div>
+                    <div class="time-slot break">
+                        <strong>저녁식사</strong><br>17:30 - 18:40
+                    </div>
+                    <div class="time-slot study">
+                        <strong>야자 2차</strong><br>18:40 - 20:00
+                    </div>
+                    <div class="time-slot study">
+                        <strong>야자 3차</strong><br>20:10 - 21:00
+                    </div>
+                </div>
+            </div>
+
+            <div class="timetable">
+                <h3 style="margin-bottom: 20px;">📋 주간 개인 학습 시간표</h3>
+                <div class="schedule-grid" id="weeklyTimetable">
+                    </div>
+            </div>
+        </div>
+
+        <div id="timer" class="page">
+            <h1 class="page-title">🍅 뽀모도로 타이머</h1>
+            
+            <div class="timer-container">
+                <div class="timer-display" id="timerDisplay">25:00</div>
+                <div class="timer-status" id="timerStatus">학습 준비 완료</div>
+                
+                <div class="timer-controls">
+                    <button class="timer-btn" id="startBtn" onclick="startTimer()">시작</button>
+                    <button class="timer-btn" id="pauseBtn" onclick="pauseTimer()" disabled>일시정지</button>
+                    <button class="timer-btn" id="resetBtn" onclick="resetTimer()">리셋</button>
+                </div>
+                
+                <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 15px;">
+                    <h3 style="margin-bottom: 15px;">📊 오늘의 뽀모도로</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 24px; font-weight: bold; color: #4ecdc4;" id="completedPomodoros">0</div>
+                            <div>완료된 뽀모도로</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 24px; font-weight: bold; color: #ffc107;" id="targetPomodoros">예정 없음</div>
+                            <div>목표 뽀모도로</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 24px; font-weight: bold; color: #764ba2;" id="remainingPomodoros">N/A</div>
+                            <div>남은 뽀모도로</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="schedule" class="page">
+            <h1 class="page-title">⚙️ 스케줄 설정</h1>
+            
+            <div class="schedule-settings">
+                <div class="settings-section">
+                    <h2 class="section-title">뽀모도로 시간 설정</h2>
+                    <div class="input-group">
+                        <label for="study-duration">학습 시간 (분)</label>
+                        <select id="study-duration">
+                            <option value="25" selected>25분</option>
+                            <option value="30">30분</option>
+                            <option value="45">45분</option>
+                            <option value="60">60분</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="break-duration">휴식 시간 (분)</label>
+                        <select id="break-duration">
+                            <option value="5" selected>5분</option>
+                            <option value="10">10분</option>
+                            <option value="15">15분</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="long-break-duration">긴 휴식 시간 (분)</label>
+                        <select id="long-break-duration">
+                            <option value="15" selected>15분</option>
+                            <option value="20">20분</option>
+                            <option value="30">30분</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="pomodoros-before-long-break">긴 휴식까지 뽀모도로 횟수</label>
+                        <select id="pomodoros-before-long-break">
+                            <option value="3">3회</option>
+                            <option value="4" selected>4회</option>
+                            <option value="5">5회</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h2 class="section-title">개인 시간표 추가</h2>
+                    <div class="schedule-builder">
+                        <div class="schedule-form">
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label for="schedule-day">요일</label>
+                                <select id="schedule-day">
+                                    <option value="월">월</option>
+                                    <option value="화">화</option>
+                                    <option value="수">수</option>
+                                    <option value="목">목</option>
+                                    <option value="금">금</option>
+                                    <option value="토">토</option>
+                                    <option value="일">일</option>
+                                </select>
+                            </div>
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label for="schedule-time">시간</label>
+                                <input type="time" id="schedule-time" value="09:00">
+                            </div>
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label for="schedule-activity">활동</label>
+                                <input type="text" id="schedule-activity" placeholder="예: 수학 공부, 운동">
+                            </div>
+                            <div class="input-group" style="margin-bottom: 0;">
+                                <label for="schedule-type">구분</label>
+                                <select id="schedule-type">
+                                    <option value="study">학습</option>
+                                    <option value="break">휴식</option>
+                                    <option value="school">학교</option>
+                                    <option value="other">기타</option>
+                                </select>
+                            </div>
+                            <button class="add-btn" onclick="addScheduleItem()">추가</button>
+                        </div>
+                        <div class="schedule-list" id="personalScheduleList">
+                            </div>
+                    </div>
+                    <button class="add-btn" onclick="generateWeeklyTimetable()">주간 시간표 업데이트</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 네비게이션 바 스크롤 시 나타나기/숨기기
+        let lastScrollY = window.scrollY;
+        const navbar = document.getElementById('navbar');
+
+        window.addEventListener('scroll', () => {
+            if (window.scrollY < lastScrollY) {
+                // Scrolling up
+                navbar.classList.add('active');
+            } else {
+                // Scrolling down
+                navbar.classList.remove('active');
+            }
+            lastScrollY = window.scrollY;
+        });
+
+        // 페이지 전환 함수
+        function showPage(pageId) {
+            // 모든 페이지 숨기기
+            const pages = document.querySelectorAll('.page');
+            pages.forEach(page => {
+                page.classList.remove('active');
+            });
+
+            // 선택된 페이지 보이기
+            document.getElementById(pageId).classList.add('active');
+
+            // 네비게이션 아이템의 active 클래스 업데이트
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.classList.remove('active');
+            });
+            event.target.classList.add('active'); // 클릭된 버튼에 active 클래스 추가
+        }
+
+        // 뽀모도로 계산 및 업데이트 함수 (기존 코드 유지)
+        function updatePomodoroCount(subject) {
+            const weekdayMinutes = parseInt(document.getElementById(`${subject}-weekday`).value);
+            const weekendMinutes = parseInt(document.getElementById(`${subject}-weekend`).value);
+            const pomodoroDuration = 25; // 1 뽀모도로 = 25분
+
+            const weekdayPomodoros = Math.floor(weekdayMinutes / pomodoroDuration);
+            const weekendPomodoros = Math.floor(weekendMinutes / pomodoroDuration);
+
+            document.getElementById(`${subject}-pomodoro`).innerText = 
+                `평일: ${weekdayPomodoros}뽀모도로 | 주말: ${weekendPomodoros}뽀모도로`;
+            
+            updateStudyAnalysis();
+        }
+
+        // 초기 뽀모도로 계산 실행 (페이지 로드 시)
+        document.addEventListener('DOMContentLoaded', () => {
+            updatePomodoroCount('korean');
+            updatePomodoroCount('english');
+            updatePomodoroCount('math');
+            updatePomodoroCount('social');
+            updatePomodoroCount('science');
+            updatePomodoroCount('history');
+            
+            // 초기 페이지 로드 시 네비게이션 바가 바로 보이도록
+            navbar.classList.add('active');
+        });
+
+        // 학습 현황 분석 함수
+        function updateStudyAnalysis() {
+            let totalWeekdayMinutes = 0;
+            let totalWeekendMinutes = 0;
+            const subjects = ['korean', 'english', 'math', 'social', 'science', 'history'];
+            
+            let pomodoroCounts = {};
+
+            subjects.forEach(subject => {
+                const weekdayMinutes = parseInt(document.getElementById(`${subject}-weekday`).value);
+                const weekendMinutes = parseInt(document.getElementById(`${subject}-weekend`).value);
+                totalWeekdayMinutes += weekdayMinutes;
+                totalWeekendMinutes += weekendMinutes;
+                
+                const weekdayPomodoros = Math.floor(weekdayMinutes / 25);
+                const weekendPomodoros = Math.floor(weekendMinutes / 25);
+                pomodoroCounts[subject] = weekdayPomodoros * 5 + weekendPomodoros * 2; // 주 5일 평일, 2일 주말 기준
+            });
+
+            const totalWeeklyMinutes = (totalWeekdayMinutes * 5) + (totalWeekendMinutes * 2);
+            const totalStudyTimeElement = document.getElementById('totalStudyTime');
+            const totalStudyAdviceElement = document.getElementById('totalStudyAdvice');
+
+            totalStudyTimeElement.innerText = `${Math.floor(totalWeeklyMinutes / 60)}시간 ${totalWeeklyMinutes % 60}분`;
+            totalStudyTimeElement.className = 'eval-status';
+
+            if (totalWeeklyMinutes < 15 * 60) { // 15시간 미만
+                totalStudyTimeElement.classList.add('status-danger');
+                totalStudyAdviceElement.innerText = '주간 총 학습 시간이 부족합니다. 더 늘려보세요!';
+            } else if (totalWeeklyMinutes < 25 * 60) { // 15시간 이상 25시간 미만
+                totalStudyTimeElement.classList.add('status-warning');
+                totalStudyAdviceElement.innerText = '꾸준히 학습하여 학습 시간을 확보하고 있습니다.';
+            } else { // 25시간 이상
+                totalStudyTimeElement.classList.add('status-good');
+                totalStudyAdviceElement.innerText = '아주 좋습니다! 균형 잡힌 학습 시간을 유지하고 있습니다.';
+            }
+
+            // 학습 균형도 분석
+            const nonZeroPomodoros = Object.values(pomodoroCounts).filter(count => count > 0);
+            const balanceElement = document.getElementById('studyBalance');
+            const balanceAdviceElement = document.getElementById('balanceAdvice');
+
+            if (nonZeroPomodoros.length === 0) {
+                balanceElement.innerText = '과목 설정 필요';
+                balanceElement.className = 'eval-status status-good';
+                balanceAdviceElement.innerText = '과목별 학습시간을 설정하여 균형도를 분석해보세요.';
+            } else {
+                const sumPomodoros = nonZeroPomodoros.reduce((a, b) => a + b, 0);
+                const averagePomodoros = sumPomodoros / nonZeroPomodoros.length;
+
+                let variance = nonZeroPomodoros.reduce((sum, count) => sum + Math.pow(count - averagePomodoros, 2), 0) / nonZeroPomodoros.length;
+                let stdDev = Math.sqrt(variance);
+
+                if (stdDev < 2) { // 표준편차가 낮으면 균형이 좋음
+                    balanceElement.innerText = '매우 균형 잡힘';
+                    balanceElement.className = 'eval-status status-good';
+                    balanceAdviceElement.innerText = '모든 과목을 고르게 학습하고 있습니다. 훌륭해요!';
+                } else if (stdDev < 4) { // 중간
+                    balanceElement.innerText = '보통';
+                    balanceElement.className = 'eval-status status-warning';
+                    balanceAdviceElement.innerText = '일부 과목에 집중하고 있을 수 있습니다. 모든 과목을 균형있게 학습하는 것을 고려해보세요.';
+                } else { // 높으면 불균형
+                    balanceElement.innerText = '불균형';
+                    balanceElement.className = 'eval-status status-danger';
+                    balanceAdviceElement.innerText = '특정 과목에 학습이 편중되어 있습니다. 취약 과목 보충 및 전체적인 균형을 맞춰보세요.';
+                }
+            }
+
+            // 뽀모도로 효율성 분석 (아직 타이머 데이터가 없으므로 임시 값)
+            const efficiencyElement = document.getElementById('pomodoroEfficiency');
+            const efficiencyAdviceElement = document.getElementById('efficiencyAdvice');
+
+            // 이 부분은 실제 뽀모도로 완료 횟수와 목표 횟수를 기반으로 나중에 업데이트될 것입니다.
+            const completed = parseInt(document.getElementById('completedPomodoros').innerText) || 0;
+            const target = parseInt(document.getElementById('targetPomodoros').innerText) || 0;
+            
+            if (target === 0) {
+                efficiencyElement.innerText = '타이머 사용 필요';
+                efficiencyElement.className = 'eval-status status-good';
+                efficiencyAdviceElement.innerText = '뽀모도로 타이머를 사용해서 학습 효율을 확인해보세요.';
+            } else {
+                const efficiency = (completed / target) * 100;
+                efficiencyElement.innerText = `${efficiency.toFixed(0)}% 효율`;
+                if (efficiency >= 80) {
+                    efficiencyElement.className = 'eval-status status-good';
+                    efficiencyAdviceElement.innerText = '뽀모도로 기법을 잘 활용하고 계시네요!';
+                } else if (efficiency >= 50) {
+                    efficiencyElement.className = 'eval-status status-warning';
+                    efficiencyAdviceElement.innerText = '조금 더 집중하여 뽀모도로를 완료해 보세요.';
+                } else {
+                    efficiencyElement.className = 'eval-status status-danger';
+                    efficiencyAdviceElement.innerText = '뽀모도로 집중 시간을 늘릴 필요가 있습니다.';
+                }
+            }
+        }
+
+        // 스케줄 설정 페이지 관련 (추가 예정)
+        let personalSchedules = [];
+
+        function addScheduleItem() {
+            const day = document.getElementById('schedule-day').value;
+            const time = document.getElementById('schedule-time').value;
+            const activity = document.getElementById('schedule-activity').value.trim();
+            const type = document.getElementById('schedule-type').value;
+
+            if (!activity) {
+                alert('활동 내용을 입력해주세요!');
+                return;
+            }
+
+            personalSchedules.push({ day, time, activity, type });
+            renderPersonalScheduleList();
+            generateWeeklyTimetable(); // 스케줄 추가 시 시간표 자동 업데이트
+        }
+
+        function renderPersonalScheduleList() {
+            const listElement = document.getElementById('personalScheduleList');
+            listElement.innerHTML = '';
+            personalSchedules.sort((a, b) => {
+                const daysOrder = ['월', '화', '수', '목', '금', '토', '일'];
+                if (a.day !== b.day) {
+                    return daysOrder.indexOf(a.day) - daysOrder.indexOf(b.day);
+                }
+                return a.time.localeCompare(b.time);
+            });
+
+            personalSchedules.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'schedule-item';
+                div.innerHTML = `
+                    <span>${item.day} ${item.time} - ${item.activity} (${item.type === 'study' ? '학습' : item.type === 'break' ? '휴식' : item.type === 'school' ? '학교' : '기타'})</span>
+                    <button class="remove-btn" onclick="removeScheduleItem(${index})">삭제</button>
+                `;
+                listElement.appendChild(div);
+            });
+        }
+
+        function removeScheduleItem(index) {
+            personalSchedules.splice(index, 1);
+            renderPersonalScheduleList();
+            generateWeeklyTimetable(); // 스케줄 삭제 시 시간표 자동 업데이트
+        }
+
+        function generateWeeklyTimetable() {
+            const weeklyTimetableDiv = document.getElementById('weeklyTimetable');
+            weeklyTimetableDiv.innerHTML = '';
+
+            const days = ['월', '화', '수', '목', '금', '토', '일'];
+            const hours = Array.from({ length: 15 }, (_, i) => `${8 + i}:00`); // 08:00부터 22:00까지
+
+            // 요일 헤더 생성
+            days.forEach(day => {
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'day-header';
+                dayHeader.innerText = day;
+                weeklyTimetableDiv.appendChild(dayHeader);
+            });
+
+            // 빈 슬롯 및 스케줄 항목 채우기 (간단화된 예시)
+            // 실제로는 시간대별로 정확하게 매핑하는 복잡한 로직이 필요합니다.
+            // 여기서는 각 요일에 스케줄 항목만 나열합니다.
+            days.forEach(day => {
+                const dayColumn = document.createElement('div');
+                dayColumn.style.display = 'flex';
+                dayColumn.style.flexDirection = 'column';
+                dayColumn.style.gap = '5px';
+                dayColumn.style.gridColumn = days.indexOf(day) + 1; // 각 요일의 그리드 컬럼 설정
+
+                const schedulesForDay = personalSchedules.filter(s => s.day === day)
+                                                        .sort((a, b) => a.time.localeCompare(b.time));
+
+                if (schedulesForDay.length === 0) {
+                    const emptySlot = document.createElement('div');
+                    emptySlot.className = 'time-slot';
+                    emptySlot.innerText = '일정 없음';
+                    dayColumn.appendChild(emptySlot);
+                } else {
+                    schedulesForDay.forEach(schedule => {
+                        const timeSlot = document.createElement('div');
+                        timeSlot.className = `time-slot ${schedule.type}`;
+                        timeSlot.innerHTML = `<strong>${schedule.time}</strong><br>${schedule.activity}`;
+                        dayColumn.appendChild(timeSlot);
+                    });
+                }
+                weeklyTimetableDiv.appendChild(dayColumn);
+            });
+            // 그리드 레이아웃을 위해 7개 컬럼을 설정했으므로, 각 요일 헤더 아래에 해당 요일의 스케줄을 넣는 방식이 필요합니다.
+            // 이 예시에서는 단순히 각 요일별 스케줄을 그룹화하여 표시합니다.
+            // 실제 완벽한 시간표를 그리려면 각 시간 슬롯에 해당하는 콘텐츠를 채우는 더 복잡한 로직이 필요합니다.
+        }
+
+
+        // 타이머 관련 변수 및 함수 (더미 데이터)
+        let timerInterval;
+        let timeLeft = 25 * 60; // 25분 (초 단위)
+        let isRunning = false;
+        let currentMode = 'study'; // 'study', 'break', 'long-break'
+        let pomodoroCount = 0;
+        let pomodorosBeforeLongBreak = 4; // 설정에서 가져올 값
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timerDisplay').innerText = 
+                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function startTimer() {
+            if (isRunning) return;
+            isRunning = true;
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('pauseBtn').disabled = false;
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    isRunning = false;
+                    
+                    if (currentMode === 'study') {
+                        pomodoroCount++;
+                        document.getElementById('completedPomodoros').innerText = pomodoroCount;
+                        document.getElementById('timerStatus').innerText = '휴식 시간!';
+                        // 알림 또는 소리 추가 가능
+                        if (pomodoroCount % pomodorosBeforeLongBreak === 0) {
+                            currentMode = 'long-break';
+                            timeLeft = parseInt(document.getElementById('long-break-duration').value) * 60;
+                        } else {
+                            currentMode = 'break';
+                            timeLeft = parseInt(document.getElementById('break-duration').value) * 60;
+                        }
+                    } else {
+                        currentMode = 'study';
+                        timeLeft = parseInt(document.getElementById('study-duration').value) * 60;
+                        document.getElementById('timerStatus').innerText = '학습 시작!';
+                    }
+                    updateTimerDisplay();
+                    document.getElementById('startBtn').disabled = false;
+                    document.getElementById('pauseBtn').disabled = true;
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('timerStatus').innerText = '일시정지됨';
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            currentMode = 'study';
+            timeLeft = parseInt(document.getElementById('study-duration').value) * 60;
+            updateTimerDisplay();
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('timerStatus').innerText = '학습 준비 완료';
+        }
+
+        // 스케줄 설정 변경 시 타이머 설정 업데이트 (일부만)
+        document.getElementById('study-duration').addEventListener('change', resetTimer);
+        document.getElementById('break-duration').addEventListener('change', resetTimer);
+        document.getElementById('long-break-duration').addEventListener('change', resetTimer);
+        document.getElementById('pomodoros-before-long-break').addEventListener('change', () => {
+            pomodorosBeforeLongBreak = parseInt(document.getElementById('pomodoros-before-long-break').value);
+        });
+
+        // 페이지 로드 시 초기화 및 분석 실행
+        document.addEventListener('DOMContentLoaded', () => {
+            showPage('study-plan'); // 초기에는 학습계획 페이지를 보여줍니다.
+            updatePomodoroCount('korean'); // 각 과목의 초기 뽀모도로 계산
+            updatePomodoroCount('english');
+            updatePomodoroCount('math');
+            updatePomodoroCount('social');
+            updatePomodoroCount('science');
+            updatePomodoroCount('history');
+            updateStudyAnalysis(); // 초기 학습 현황 분석
+            renderPersonalScheduleList(); // 저장된 개인 스케줄 불러오기 (현재는 빈 배열)
+            generateWeeklyTimetable(); // 주간 시간표 생성
+            updateTimerDisplay(); // 타이머 초기화
+        });
+    </script>
+</body>
+</html>
