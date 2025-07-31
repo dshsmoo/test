@@ -1,0 +1,1631 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>나만의 스마트 뽀모도로 스터디 플래너</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"> 
+    <meta name="apple-mobile-web-app-title" content="스마트 플래너">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png"> 
+    <style>
+        /* 기본 스타일 및 다크 모드 */
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            line-height: 1.6;
+        }
+
+        h1 {
+            color: #6a9cff;
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 2.5em;
+        }
+
+        /* 상단 메뉴 버튼 그룹 */
+        .top-menu-buttons {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .top-menu-buttons button {
+            background-color: #34495e;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        .top-menu-buttons button:hover {
+            background-color: #2c3e50;
+            transform: translateY(-2px);
+        }
+        .top-menu-buttons button:active {
+            transform: translateY(1px);
+        }
+        .top-menu-buttons button.active {
+            background-color: #6a9cff;
+            box-shadow: 0 4px 15px rgba(106, 156, 255, 0.4);
+        }
+        /* 레벨 재설정 버튼 스타일 */
+        #btnResetLevel {
+            background-color: #e74c3c;
+        }
+        #btnResetLevel:hover {
+            background-color: #c0392b;
+        }
+
+        .main-content-wrapper {
+            background-color: #2c2c2c;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+            padding: 30px;
+            width: 100%;
+            max-width: 1200px;
+            min-height: 600px; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        /* 각 섹션 스타일 */
+        .content-section {
+            width: 100%;
+            padding: 30px;
+            box-sizing: border-box;
+            background-color: #2c2c2c;
+            display: none; /* 기본적으로 숨김 */
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            overflow-y: auto; 
+            border-radius: 15px;
+        }
+        .content-section.active {
+            display: flex; /* 활성화되면 보이도록 */
+        }
+
+        h2 {
+            color: #6a9cff;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        /* 초기 레벨 선택 섹션 */
+        #levelSelectionSection {
+            display: none; 
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 50px;
+            text-align: center;
+        }
+        #levelSelectionSection h2 {
+            color: #6aff9c;
+            margin-bottom: 40px;
+            font-size: 2.2em;
+        }
+        .level-buttons {
+            display: flex;
+            gap: 30px;
+            margin-top: 30px;
+        }
+        .level-buttons button {
+            background-color: #6a9cff;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 15px 40px;
+            font-size: 1.5em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 6px 15px rgba(106, 156, 255, 0.4);
+        }
+        .level-buttons button:hover {
+            background-color: #537ec7;
+            transform: translateY(-3px);
+        }
+        .level-buttons button:active {
+            transform: translateY(1px);
+        }
+
+        /* 뽀모도로 타이머 섹션 */
+        #pomodoroSection {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        /* 원형 타이머 스타일 */
+        .timer-circle-container {
+            position: relative;
+            width: 250px; /* 원의 크기 */
+            height: 250px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .timer-circle-background {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background-color: #3a3a3a; /* 원의 배경색 */
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .timer-circle-progress {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            transform: rotate(-90deg); /* 12시 방향에서 시작 */
+            background: conic-gradient(#e74c3c var(--progress, 0%) 0%, transparent var(--progress, 0%) 100%); /* 빨간색 채우기 */
+            transition: background 0.5s linear; /* 색상 변화 부드럽게 */
+        }
+
+        .timer-circle-text {
+            position: relative;
+            font-size: 3.5em; /* 텍스트 크기 */
+            font-weight: bold;
+            color: #e0e0e0;
+            z-index: 10;
+            text-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+            letter-spacing: 1px;
+        }
+
+
+        .timer-status {
+            font-size: 1.5em;
+            color: #a0a0a0;
+            margin-bottom: 25px;
+            animation: fadeIn 0.8s ease-in-out;
+        }
+        .control-buttons button {
+            background-color: #6a9cff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            margin: 0 8px;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+        }
+        .control-buttons button:hover {
+            background-color: #537ec7;
+            transform: translateY(-2px);
+        }
+        .control-buttons button:active {
+            transform: translateY(1px);
+        }
+        .control-buttons button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+            opacity: 0.7;
+            transform: none;
+            box-shadow: none;
+        }
+        .session-info {
+            margin-top: 25px;
+            font-size: 1.1em;
+            color: #b0b0b0;
+            text-align: center;
+        }
+        .session-info span {
+            color: #6a9cff;
+            font-weight: bold;
+        }
+        .subject-input {
+            width: calc(100% - 20px);
+            max-width: 300px;
+            padding: 10px;
+            margin-top: 20px;
+            border: 1px solid #555;
+            background-color: #2a2a2a;
+            color: #e0e0e0;
+            border-radius: 5px;
+            font-size: 1em;
+            text-align: center;
+        }
+        .subject-input::placeholder {
+            color: #888;
+        }
+
+        /* 공부 기록 섹션 (뽀모도로 섹션 내부에 위치) */
+        .record-container {
+            width: 100%;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px dashed #4a4a4a;
+        }
+        .record-container h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #9c6aff;
+            text-align: center;
+        }
+        #studyRecordsList {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 250px;
+            overflow-y: auto;
+            background-color: #3a3a3a;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        #studyRecordsList li {
+            background-color: #4a4a4a;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            word-break: break-word;
+        }
+        #studyRecordsList li span.record-subject {
+            font-weight: bold;
+            color: #9c6aff;
+        }
+        #studyRecordsList li span.record-time {
+            font-size: 0.8em;
+            color: #b0b0b0;
+            margin-left: 10px;
+            white-space: nowrap;
+        }
+        #studyRecordsList li:last-child { margin-bottom: 0; }
+        #studyRecordsList li.no-records {
+            text-align: center;
+            color: #888;
+            padding: 20px;
+        }
+
+        /* --- 새로운 스케줄/분량 입력 섹션 스타일 --- */
+        .input-form-group {
+            background-color: #3a3a3a;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+            width: 100%;
+            max-width: 700px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .input-form-group h3 {
+            color: #6aff9c; 
+            margin-top: 0;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.6em;
+        }
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+        .form-row label {
+            color: #e0e0e0;
+            font-weight: bold;
+            flex-basis: 80px; 
+            text-align: right;
+            padding-right: 10px;
+        }
+        .form-row input[type="text"],
+        .form-row input[type="time"],
+        .form-row input[type="number"],
+        .form-row select {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #555;
+            background-color: #2a2a2a;
+            color: #e0e0e0;
+            border-radius: 5px;
+            font-size: 1em;
+            max-width: 200px; 
+        }
+        .form-row input[type="number"] {
+            max-width: 100px;
+            text-align: center;
+        }
+        .form-row select {
+            max-width: 150px;
+        }
+        .form-row button {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            margin-left: 10px;
+            white-space: nowrap;
+        }
+        .form-row button:hover {
+            background-color: #27ae60;
+            transform: translateY(-1px);
+        }
+
+        .schedule-list-container, .study-plan-list-container {
+            background-color: #3a3a3a;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #4a4a4a;
+        }
+        .schedule-list-container ul, .study-plan-list-container ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .schedule-list-container li, .study-plan-list-container li {
+            background-color: #4a4a4a;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            word-break: break-word;
+        }
+        .schedule-list-container li:last-child {
+            margin-bottom: 0;
+        }
+        .list-item-content {
+            flex-grow: 1;
+        }
+        .list-item-content strong {
+            color: #6a9cff;
+        }
+        .list-item-content span {
+            color: #b0b0b0;
+            font-size: 0.85em;
+            margin-left: 10px;
+        }
+        .list-delete-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 0.8em;
+            margin-left: 15px;
+            transition: background-color 0.3s ease;
+        }
+        .list-delete-btn:hover {
+            background-color: #c0392b;
+        }
+        .no-items {
+            text-align: center;
+            color: #888;
+            padding: 20px;
+        }
+
+        /* Generated Planner Section - 기존 시각적 플래너 출력 부분을 새로운 내용으로 대체 */
+        #generatedPlannerSection {
+            max-width: 100%; /* 너비 최대한 확보 */
+            width: 100%;
+        }
+        #generatedPlannerSection h3 {
+            color: #6aff9c;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .planner-output-section { 
+            background-color: #3a3a3a;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            padding: 25px;
+            margin-bottom: 20px;
+            width: 100%;
+            overflow-x: auto; /* 테이블이 넘칠 경우 스크롤바 */
+        }
+        .planner-output-section h3 {
+            color: #9c6aff; 
+            margin-top: 0;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.6em;
+        }
+        .generated-output-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .generated-output-list li {
+            background-color: #4a4a4a;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            word-break: break-word;
+        }
+        .generated-output-list li:last-child { margin-bottom: 0; }
+        .generated-output-list li strong {
+            color: #6aff9c;
+        }
+        .generated-output-list li span {
+            color: #b0b0b0;
+            font-size: 0.85em;
+        }
+        .no-generated-data {
+            text-align: center;
+            color: #888;
+            padding: 50px;
+            font-size: 1.1em;
+        }
+        
+        /* 경고 메시지 스타일 */
+        .warning-message {
+            color: #ff6a6a;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #5a2a2a;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            font-size: 1.2em;
+        }
+
+        /* AI 플래너 테이블 스타일 */
+        #aiPlannerTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #2a2a2a;
+        }
+        #aiPlannerTable th, #aiPlannerTable td {
+            border: 1px solid #444;
+            padding: 8px;
+            text-align: center;
+            font-size: 0.85em;
+            vertical-align: top; /* 내용이 위쪽으로 정렬되도록 */
+            min-width: 80px; /* 요일 셀 최소 너비 */
+        }
+        #aiPlannerTable th {
+            background-color: #3e3e3e;
+            color: #fff;
+            position: sticky; /* 가로 스크롤 시 요일 고정 */
+            top: 0;
+            z-index: 2; /* 시간 열보다 위에 오도록 */
+        }
+        #aiPlannerTable td {
+            background-color: #2c2c2c;
+            color: #e0e0e0;
+        }
+        #aiPlannerTable td.time-label {
+            background-color: #3e3e3e;
+            color: #fff;
+            font-weight: bold;
+            position: sticky; /* 세로 스크롤 시 시간 고정 */
+            left: 0;
+            z-index: 1;
+        }
+        /* AI 플래너 셀 색상 */
+        #aiPlannerTable td.sleep-time { background-color: #5a3d7d; color: #fff; } /* 보라색 */
+        #aiPlannerTable td.academy-time { background-color: #E74C3C; color: #fff; } /* 학원: 빨강 */
+        #aiPlannerTable td.meal-time { background-color: #3d7d5a; color: #fff; } /* 어두운 초록 */
+        /* 개인 공부 과목별 색상 (JS에서 추가될 예정) */
+        #aiPlannerTable td.study-color-0 { background-color: #2ecc71; color: #fff; } /* 에메랄드 그린 */
+        #aiPlannerTable td.study-color-1 { background-color: #3498db; color: #fff; } /* 밝은 파랑 */
+        #aiPlannerTable td.study-color-2 { background-color: #9b59b6; color: #fff; } /* 보라 */
+        #aiPlannerTable td.study-color-3 { background-color: #f1c40f; color: #333; } /* 노랑 */
+        #aiPlannerTable td.study-color-4 { background-color: #e67e22; color: #fff; } /* 오렌지 */
+        #aiPlannerTable td.study-color-5 { background-color: #1abc9c; color: #fff; } /* 청록 */
+        #aiPlannerTable td.study-color-6 { background-color: #d35400; color: #fff; } /* 다크 오렌지 */
+        #aiPlannerTable td.study-color-7 { background-color: #c0392b; color: #fff; } /* 벽돌색 */
+        #aiPlannerTable td.pomodoro-break { background-color: #607D8B; color: #eee; font-size: 0.75em;} /* 뽀모도로 휴식 시간 - 회색 톤 */
+
+
+        footer {
+            margin-top: auto;
+            padding: 20px;
+            color: #888;
+            font-size: 0.85em;
+            text-align: center;
+            width: 100%;
+        }
+
+        /* 애니메이션 */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* 미디어 쿼리 (모바일 반응형) */
+        @media (max-width: 768px) {
+            h1 { font-size: 2em; margin-bottom: 20px; }
+            .top-menu-buttons {
+                flex-direction: column;
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+            .top-menu-buttons button {
+                padding: 10px 20px;
+                font-size: 1em;
+            }
+            .main-content-wrapper {
+                padding: 20px;
+                min-height: 500px;
+            }
+            .content-section {
+                padding: 20px;
+            }
+            h2 { font-size: 1.8em; }
+            /* 뽀모도로 원형 타이머 모바일 */
+            .timer-circle-container {
+                width: 200px;
+                height: 200px;
+            }
+            .timer-circle-text {
+                font-size: 3em;
+            }
+
+            .timer-status { font-size: 1.2em; }
+            .control-buttons button {
+                padding: 10px 15px;
+                font-size: 0.9em;
+            }
+            .subject-input {
+                max-width: 250px;
+            }
+            .record-container {
+                margin-top: 20px;
+            }
+            #studyRecordsList {
+                padding: 10px;
+                max-height: 200px;
+            }
+            #studyRecordsList li {
+                padding: 8px 10px;
+                font-size: 0.85em;
+            }
+
+            /* 새로운 입력 섹션 모바일 스타일 */
+            .input-form-group {
+                padding: 15px;
+                gap: 10px;
+            }
+            .input-form-group h3 {
+                font-size: 1.4em;
+            }
+            .form-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+            .form-row label {
+                text-align: left;
+                padding-right: 0;
+                flex-basis: auto;
+                width: 100%;
+            }
+            .form-row input[type="text"],
+            .form-row input[type="time"],
+            .form-row input[type="number"],
+            .form-row select {
+                width: 100%;
+                max-width: none;
+            }
+            .form-row button {
+                width: 100%;
+                margin-left: 0;
+            }
+            .schedule-list-container li, .study-plan-list-container li {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+            .list-item-content span {
+                margin-left: 0;
+            }
+            .list-delete-btn {
+                width: 100%;
+                margin-left: 0;
+            }
+            #aiPlannerTable th, #aiPlannerTable td {
+                font-size: 0.7em; /* 모바일에서 글씨 작게 */
+                padding: 5px;
+                min-width: 60px;
+            }
+            #aiPlannerTable td.time-label {
+                 min-width: 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>나만의 스마트 뽀모도로 스터디 플래너</h1>
+
+    <section id="levelSelectionSection" class="content-section">
+        <h2>당신의 학년은?</h2>
+        <p>개인 맞춤형 플래너를 위해 학년을 선택해주세요.</p>
+        <div class="level-buttons">
+            <button id="selectMiddleSchool">중학생</button>
+            <button id="selectHighSchool">고등학생</button>
+        </div>
+    </section>
+
+    <div class="top-menu-buttons"> 
+        <button id="btnPomodoro" class="active">뽀모도로 타이머</button>
+        <button id="btnPlannerInput">학원/공부 입력</button> 
+        <button id="btnGeneratedPlanner">플래너 보기</button>
+        <button id="btnResetLevel">레벨 재설정</button> 
+    </div>
+
+    <div class="main-content-wrapper"> 
+        <section id="pomodoroSection" class="content-section active"> 
+            <h2>뽀모도로 스터디 타이머</h2>
+            
+            <div class="timer-circle-container">
+                <div class="timer-circle-background"></div>
+                <div class="timer-circle-progress" id="timerProgressCircle"></div>
+                <div class="timer-circle-text" id="timer">25:00</div>
+            </div>
+
+            <div class="timer-status" id="timerStatus">공부 시간</div>
+            <input type="text" id="subjectInput" class="subject-input" placeholder="무엇을 공부할까요? (예: 수학, 영어)"/>
+            <div class="control-buttons">
+                <button id="startButton">시작</button>
+                <button id="pauseButton" disabled>일시정지</button>
+                <button id="resetButton">초기화</button>
+            </div>
+            <div class="session-info">
+                오늘 완료한 뽀모도로 세션: <span id="completedSessions">0</span>회
+            </div>
+
+            <div class="record-container">
+                <h3>오늘의 공부 기록</h3>
+                <ul id="studyRecordsList">
+                    <li class="no-records">아직 공부 기록이 없습니다!</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="plannerInputSection" class="content-section">
+            <h2>학원 및 주간 공부 분량 입력</h2>
+            
+            <div class="input-form-group">
+                <h3><i class="fas fa-school"></i> 학원 스케줄 작성</h3>
+                <div class="form-row">
+                    <label for="academyNameInput">학원명:</label>
+                    <input type="text" id="academyNameInput" placeholder="학원 이름 (예: 대성학원)">
+                </div>
+                <div class="form-row">
+                    <label for="academyDaySelect">요일:</label>
+                    <select id="academyDaySelect">
+                        <option value="월">월요일</option>
+                        <option value="화">화요일</option>
+                        <option value="수">수요일</option>
+                        <option value="목">목요일</option>
+                        <option value="금">금요일</option>
+                        <option value="토">토요일</option>
+                        <option value="일">일요일</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <label for="academyStartTimeInput">시작 시간:</label>
+                    <input type="time" id="academyStartTimeInput" value="09:00">
+                </div>
+                <div class="form-row">
+                    <label for="academyEndTimeInput">종료 시간:</label>
+                    <input type="time" id="academyEndTimeInput" value="12:00">
+                </div>
+                <div class="form-row">
+                    <button id="addAcademyScheduleBtn">학원 스케줄 추가</button>
+                </div>
+                <div class="schedule-list-container">
+                    <h4>등록된 학원 스케줄</h4>
+                    <ul id="academyScheduleList">
+                        <li class="no-items">등록된 학원 스케줄이 없습니다.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="input-form-group">
+                <h3><i class="fas fa-bed"></i> 수면 시간 입력</h3>
+                <div class="form-row">
+                    <label for="sleepStartTimeInput">취침 시간:</label>
+                    <input type="time" id="sleepStartTimeInput" value="23:00" placeholder="예: 23:00 (밤 11시), 00:00 (자정)">
+                </div>
+                <div class="form-row">
+                    <label for="sleepEndTimeInput">기상 시간:</label>
+                    <input type="time" id="sleepEndTimeInput" value="07:00" placeholder="예: 07:00 (오전 7시), 12:00 (정오)">
+                </div>
+                <div class="form-row">
+                    <button id="saveSleepTimeBtn">수면 시간 저장</button>
+                </div>
+                 <div class="schedule-list-container">
+                    <h4>설정된 수면 시간</h4>
+                    <ul id="displaySleepTimeList">
+                        <li class="no-items">설정된 수면 시간이 없습니다.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="input-form-group">
+                <h3><i class="fas fa-book"></i> 주간 공부 분량 작성</h3>
+                <div class="form-row">
+                    <label for="studySubjectInput">과목명:</label>
+                    <input type="text" id="studySubjectInput" placeholder="과목 (예: 국어, 영어)">
+                </div>
+                <div class="form-row">
+                    <label for="studyWeeklyHoursInput">주간 목표:</label>
+                    <input type="number" id="studyWeeklyHoursInput" min="0" value="5">
+                    <span>시간</span>
+                </div>
+                <div class="form-row">
+                    <button id="addStudyPlanBtn">주간 공부 분량 추가</button>
+                </div>
+                <div class="study-plan-list-container">
+                    <h4>등록된 주간 공부 분량</h4>
+                    <ul id="studyPlanList">
+                        <li class="no-items">등록된 주간 공부 분량이 없습니다.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="generatedPlannerSection" class="content-section">
+            <h2>나의 주간 스케줄 및 공부 목표</h2>
+            <div id="generatedPlannerOutput" class="planner-output-section">
+                <div id="academyWarning" class="warning-message" style="display: none;"></div>
+                <div id="sleepWarning" class="warning-message" style="display: none;"></div>
+                <div id="educationWarning" class="warning-message" style="display: none;"></div>
+                
+
+                <h3><i class="fas fa-calendar-alt"></i> 학원 스케줄 요약</h3>
+                <ul id="displayAcademyScheduleList" class="generated-output-list">
+                    <li class="no-generated-data">등록된 학원 스케줄이 없습니다.</li>
+                </ul>
+
+                <h3><i class="fas fa-book-open"></i> 주간 공부 목표 요약</h3>
+                <ul id="displayStudyPlanList" class="generated-output-list">
+                    <li class="no-generated-data">등록된 주간 공부 분량이 없습니다.</li>
+                </ul>
+
+                <h3><i class="fas fa-robot"></i> AI 추천 주간 스터디 플래너 (뽀모도로 기반)</h3>
+                <div id="aiPlannerTableContainer">
+                    <table id="aiPlannerTable">
+                        <thead>
+                            <tr>
+                                <th>시간</th>
+                                <th>월</th>
+                                <th>화</th>
+                                <th>수</th>
+                                <th>목</th>
+                                <th>금</th>
+                                <th>토</th>
+                                <th>일</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            </tbody>
+                    </table>
+                </div>
+                 <p id="noAiPlannerData" class="no-generated-data" style="display: block;">
+                    AI 추천 플래너를 생성하려면 학원 스케줄, 수면 시간, 주간 공부 분량을 입력해주세요.
+                </p>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 나만의 스마트 뽀모도로 스터디 플래너 팀. 모든 권리 보유.</p>
+    </footer>
+
+    <script src="https://kit.fontawesome.com/your_font_awesome_kit_code.js" crossorigin="anonymous"></script>
+    <script>
+        // =======================================================
+        // JavaScript 코드 시작
+        // =======================================================
+
+        // --- PWA Service Worker 등록 ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+        
+        // --- 초기 사용자 레벨 선택 관련 요소 ---
+        const levelSelectionSection = document.getElementById('levelSelectionSection');
+        const selectMiddleSchoolBtn = document.getElementById('selectMiddleSchool');
+        const selectHighSchoolBtn = document.getElementById('selectHighSchool');
+        const topMenuButtonsContainer = document.querySelector('.top-menu-buttons');
+        const mainContentWrapper = document.querySelector('.main-content-wrapper');
+        const btnResetLevel = document.getElementById('btnResetLevel'); // 새로 추가된 버튼
+        
+        let userLevel = localStorage.getItem('userLevel'); // 'middle' 또는 'high'
+
+        // --- 섹션 전환 관련 요소 ---
+        const btnPomodoro = document.getElementById('btnPomodoro');
+        const btnPlannerInput = document.getElementById('btnPlannerInput');
+        const btnGeneratedPlanner = document.getElementById('btnGeneratedPlanner');
+        const pomodoroSection = document.getElementById('pomodoroSection');
+        const plannerInputSection = document.getElementById('plannerInputSection');
+        const generatedPlannerSection = document.getElementById('generatedPlannerSection');
+        
+        const allSections = [levelSelectionSection, pomodoroSection, plannerInputSection, generatedPlannerSection];
+        const topMenuButtons = [btnPomodoro, btnPlannerInput, btnGeneratedPlanner, btnResetLevel];
+
+        function showSection(sectionToShow) {
+            allSections.forEach(section => {
+                if (section === sectionToShow) {
+                    section.classList.add('active'); // CSS display: flex; 적용
+                } else {
+                    section.classList.remove('active'); // CSS display: none; 적용
+                }
+            });
+            // 상단 메뉴 버튼 활성화 상태 업데이트
+            topMenuButtons.forEach(button => {
+                button.classList.remove('active');
+            });
+            if (sectionToShow === pomodoroSection) {
+                btnPomodoro.classList.add('active');
+            } else if (sectionToShow === plannerInputSection) {
+                btnPlannerInput.classList.add('active');
+            } else if (sectionToShow === generatedPlannerSection) {
+                btnGeneratedPlanner.classList.add('active');
+                displayGeneratedPlanner(); // 플래너 보기 섹션 활성화 시 데이터 업데이트
+            }
+        }
+        
+        // 화면 상태를 업데이트하는 통합 함수 (새로 추가)
+        function updateUIForLevelState() {
+            userLevel = localStorage.getItem('userLevel');
+            if (userLevel) {
+                // 레벨이 있으면 메인 화면을 보여줌
+                topMenuButtonsContainer.style.display = 'flex';
+                mainContentWrapper.style.display = 'flex';
+                levelSelectionSection.style.display = 'none';
+                showSection(pomodoroSection);
+            } else {
+                // 레벨이 없으면 레벨 선택 화면을 보여줌
+                topMenuButtonsContainer.style.display = 'none';
+                mainContentWrapper.style.display = 'none';
+                levelSelectionSection.style.display = 'flex';
+                showSection(levelSelectionSection);
+            }
+        }
+
+        // --- 초기 로드 시 사용자 레벨 확인 및 화면 표시 ---
+        document.addEventListener('DOMContentLoaded', updateUIForLevelState);
+
+        selectMiddleSchoolBtn.addEventListener('click', () => {
+            localStorage.setItem('userLevel', 'middle');
+            updateUIForLevelState();
+        });
+        
+        selectHighSchoolBtn.addEventListener('click', () => {
+            localStorage.setItem('userLevel', 'high');
+            updateUIForLevelState();
+        });
+
+        // 레벨 재설정 버튼에 대한 이벤트 리스너 수정
+        btnResetLevel.addEventListener('click', () => {
+            localStorage.removeItem('userLevel'); // 로컬 스토리지에서 학년 정보 삭제
+            updateUIForLevelState(); // 화면 상태 업데이트 함수 호출
+        });
+
+        btnPomodoro.addEventListener('click', () => showSection(pomodoroSection));
+        btnPlannerInput.addEventListener('click', () => showSection(plannerInputSection));
+        btnGeneratedPlanner.addEventListener('click', () => showSection(generatedPlannerSection));
+
+        // --- 뽀모도로 타이머 기능 ---
+        const timerDisplay = document.getElementById('timer');
+        const timerProgressCircle = document.getElementById('timerProgressCircle'); // 새로 추가된 원형 프로그레스 바 요소
+        const timerStatus = document.getElementById('timerStatus');
+        const startButton = document.getElementById('startButton');
+        const pauseButton = document.getElementById('pauseButton');
+        const resetButton = document.getElementById('resetButton');
+        const subjectInput = document.getElementById('subjectInput');
+        const completedSessionsSpan = document.getElementById('completedSessions');
+        const studyRecordsList = document.getElementById('studyRecordsList');
+        
+        let countdown;
+        let timeLeft; // 초 단위로 시간 저장
+        let initialTime; // 총 시간 (타이머 진행률 계산용)
+        let isPaused = false;
+        let isStudyTime = true;
+        let pomodoroCount = parseInt(localStorage.getItem('completedSessions') || '0');
+        let currentSubject = '';
+        let longBreakThreshold = 4; // 4회 뽀모도로마다 긴 휴식
+        
+        const POMODORO_DURATION = 25 * 60; // 25분
+        const SHORT_BREAK_DURATION = 5 * 60; // 5분
+        const LONG_BREAK_DURATION = 15 * 60; // 15분
+        
+        const alarmSound = new Audio('https://www.soundjay.com/buttons/beep-07a.mp3'); 
+
+        // 알림 권한 요청
+        function requestNotificationPermission() {
+            if ('Notification' in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        console.log('Notification permission granted.');
+                    } else {
+                        console.warn('Notification permission denied.');
+                    }
+                });
+            }
+        }
+
+        function showNotification(title, body) {
+            if (Notification.permission === 'granted') {
+                new Notification(title, { 
+                    body: body,
+                    icon: '/icons/icon-192x192.png'
+                });
+            }
+        }
+        
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes < 10 ? '0' : ''}${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+        }
+        
+        function updateProgressCircle() {
+            if (initialTime === 0) return; // Divide by zero 방지
+            const progress = (timeLeft / initialTime) * 100;
+            timerProgressCircle.style.setProperty('--progress', `${progress}%`);
+        }
+
+        function startTimer() {
+            startButton.disabled = true;
+            pauseButton.disabled = false;
+            subjectInput.disabled = true;
+            
+            if (!isPaused) {
+                // 새로운 세션 시작 시 주제 저장 및 초기 시간 설정
+                currentSubject = subjectInput.value.trim();
+                if (!currentSubject) {
+                    currentSubject = "집중 공부"; // 주제가 없으면 기본값 설정
+                }
+                timeLeft = POMODORO_DURATION;
+                initialTime = POMODORO_DURATION; // 초기 시간 설정
+                timerStatus.textContent = '공부 시간';
+                showNotification('뽀모도로 시작', `${currentSubject} 공부를 시작합니다!`);
+            } else {
+                // 일시정지에서 재개 시 (initialTime은 그대로 유지)
+                isPaused = false;
+            }
+
+            updateProgressCircle(); // 시작 시 프로그레스 업데이트
+
+            countdown = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = formatTime(timeLeft);
+                updateProgressCircle(); // 매 초 프로그레스 업데이트
+
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    alarmSound.play();
+
+                    if (isStudyTime) {
+                        pomodoroCount++;
+                        localStorage.setItem('completedSessions', pomodoroCount);
+                        completedSessionsSpan.textContent = pomodoroCount;
+                        addStudyRecord(currentSubject, POMODORO_DURATION / 60); // 분 단위로 기록
+
+                        // 휴식 시간 결정
+                        if (pomodoroCount % longBreakThreshold === 0) {
+                            timeLeft = LONG_BREAK_DURATION;
+                            initialTime = LONG_BREAK_DURATION;
+                            timerStatus.textContent = '긴 휴식 시간';
+                            showNotification('긴 휴식 시간', '잘했어요! 이제 긴 휴식을 취하세요.');
+                        } else {
+                            timeLeft = SHORT_BREAK_DURATION;
+                            initialTime = SHORT_BREAK_DURATION;
+                            timerStatus.textContent = '짧은 휴식 시간';
+                            showNotification('짧은 휴식 시간', '잠시 쉬고 다시 만나요!');
+                        }
+                    } else {
+                        timeLeft = POMODORO_DURATION;
+                        initialTime = POMODORO_DURATION;
+                        timerStatus.textContent = '공부 시간';
+                        showNotification('공부 시간 시작', '다시 공부할 시간입니다!');
+                    }
+
+                    isStudyTime = !isStudyTime;
+                    startButton.disabled = false;
+                    pauseButton.disabled = true; // 타이머 종료 후에는 일시정지 비활성화
+                    subjectInput.disabled = false; // 타이머 종료 후 주제 입력 활성화
+                    subjectInput.value = ''; // 주제 입력 필드 초기화
+                    currentSubject = '';
+                    updateProgressCircle(); // 다음 세션 시작 시 프로그레스 업데이트
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            clearInterval(countdown);
+            isPaused = true;
+            startButton.disabled = false;
+            pauseButton.disabled = true;
+            showNotification('타이머 일시정지', '타이머가 일시정지되었습니다.');
+        }
+
+        function resetTimer() {
+            clearInterval(countdown);
+            timeLeft = POMODORO_DURATION;
+            initialTime = POMODORO_DURATION; // 초기 시간 설정
+            isStudyTime = true;
+            isPaused = false;
+            timerDisplay.textContent = formatTime(timeLeft);
+            timerStatus.textContent = '공부 시간';
+            startButton.disabled = false;
+            pauseButton.disabled = true;
+            subjectInput.disabled = false;
+            subjectInput.value = ''; // 주제 입력 필드 초기화
+            currentSubject = '';
+            updateProgressCircle(); // 리셋 시 프로그레스 업데이트
+            showNotification('타이mer 초기화', '뽀모도로 타이머가 초기화되었습니다.');
+        }
+
+        function addStudyRecord(subject, durationMinutes) {
+            const records = JSON.parse(localStorage.getItem('studyRecords') || '[]');
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+            records.push({ subject: subject, duration: durationMinutes, time: timeString });
+            localStorage.setItem('studyRecords', JSON.stringify(records));
+            renderStudyRecords();
+        }
+
+        function renderStudyRecords() {
+            const records = JSON.parse(localStorage.getItem('studyRecords') || '[]');
+            studyRecordsList.innerHTML = '';
+            if (records.length === 0) {
+                const noRecordsItem = document.createElement('li');
+                noRecordsItem.classList.add('no-records');
+                noRecordsItem.textContent = '아직 공부 기록이 없습니다!';
+                studyRecordsList.appendChild(noRecordsItem);
+            } else {
+                records.forEach((record) => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span class="record-subject">${record.subject}</span>
+                        <span class="record-time">${record.duration}분 (${record.time})</span>
+                    `;
+                    studyRecordsList.appendChild(li);
+                });
+            }
+        }
+
+        // 초기 로드 시 완료 세션 및 공부 기록 표시
+        completedSessionsSpan.textContent = pomodoroCount;
+        renderStudyRecords();
+        resetTimer(); // 페이지 로드 시 타이머 초기 상태로 설정 및 원형 타이머 업데이트
+
+        // 이벤트 리스너 연결
+        startButton.addEventListener('click', startTimer);
+        pauseButton.addEventListener('click', pauseTimer);
+        resetButton.addEventListener('click', resetTimer);
+        
+        // 페이지 로드 시 알림 권한 요청
+        window.addEventListener('load', requestNotificationPermission);
+
+
+        // --- 학원/주간 공부 분량 & 수면 시간 입력 기능 ---
+        const academyNameInput = document.getElementById('academyNameInput');
+        const academyDaySelect = document.getElementById('academyDaySelect');
+        const academyStartTimeInput = document.getElementById('academyStartTimeInput');
+        const academyEndTimeInput = document.getElementById('academyEndTimeInput');
+        const addAcademyScheduleBtn = document.getElementById('addAcademyScheduleBtn');
+        const academyScheduleList = document.getElementById('academyScheduleList');
+
+        const sleepStartTimeInput = document.getElementById('sleepStartTimeInput');
+        const sleepEndTimeInput = document.getElementById('sleepEndTimeInput');
+        const saveSleepTimeBtn = document.getElementById('saveSleepTimeBtn');
+        const displaySleepTimeList = document.getElementById('displaySleepTimeList');
+
+        const studySubjectInput = document.getElementById('studySubjectInput');
+        const studyWeeklyHoursInput = document.getElementById('studyWeeklyHoursInput');
+        const addStudyPlanBtn = document.getElementById('addStudyPlanBtn');
+        const studyPlanList = document.getElementById('studyPlanList');
+
+        let academySchedules = JSON.parse(localStorage.getItem('academySchedules') || '[]');
+        let sleepTime = JSON.parse(localStorage.getItem('sleepTime') || '[]'); // 배열로 저장
+        let studyPlans = JSON.parse(localStorage.getItem('studyPlans') || '[]');
+
+        function saveAcademySchedules() {
+            localStorage.setItem('academySchedules', JSON.stringify(academySchedules));
+            renderAcademySchedules();
+        }
+
+        function renderAcademySchedules() {
+            academyScheduleList.innerHTML = '';
+            if (academySchedules.length === 0) {
+                const noItems = document.createElement('li');
+                noItems.classList.add('no-items');
+                noItems.textContent = '등록된 학원 스케줄이 없습니다.';
+                academyScheduleList.appendChild(noItems);
+            } else {
+                academySchedules.forEach((schedule, index) => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <div class="list-item-content">
+                            <strong>${schedule.name}</strong>
+                            <span>${schedule.day} ${schedule.startTime} - ${schedule.endTime}</span>
+                        </div>
+                        <button class="list-delete-btn" data-index="${index}">삭제</button>
+                    `;
+                    academyScheduleList.appendChild(li);
+                });
+                // 삭제 버튼 이벤트 리스너 재설정
+                document.querySelectorAll('#academyScheduleList .list-delete-btn').forEach(btn => {
+                    btn.addEventListener('click', deleteAcademySchedule);
+                });
+            }
+        }
+        
+        function deleteAcademySchedule(event) {
+            const index = event.target.dataset.index;
+            academySchedules.splice(index, 1);
+            saveAcademySchedules();
+        }
+        
+        addAcademyScheduleBtn.addEventListener('click', () => {
+            const name = academyNameInput.value.trim();
+            const day = academyDaySelect.value;
+            const startTime = academyStartTimeInput.value;
+            const endTime = academyEndTimeInput.value;
+            
+            if (name && day && startTime && endTime) {
+                academySchedules.push({ name, day, startTime, endTime });
+                saveAcademySchedules();
+                academyNameInput.value = '';
+                // 시간 입력 필드는 그대로 유지
+            } else {
+                alert('모든 학원 스케줄 정보를 입력해주세요.');
+            }
+        });
+
+        function saveSleepTime() {
+            localStorage.setItem('sleepTime', JSON.stringify(sleepTime));
+            renderSleepTime();
+        }
+
+        function renderSleepTime() {
+            displaySleepTimeList.innerHTML = '';
+            if (sleepTime.length === 0) {
+                const noItems = document.createElement('li');
+                noItems.classList.add('no-items');
+                noItems.textContent = '설정된 수면 시간이 없습니다.';
+                displaySleepTimeList.appendChild(noItems);
+            } else {
+                const time = sleepTime[0]; // 수면 시간은 하나만 저장
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <div class="list-item-content">
+                        <strong>수면 시간</strong>
+                        <span>${time.start} - ${time.end}</span>
+                    </div>
+                    <button class="list-delete-btn" data-type="sleep">삭제</button>
+                `;
+                displaySleepTimeList.appendChild(li);
+                document.querySelector('#displaySleepTimeList .list-delete-btn').addEventListener('click', deleteSleepTime);
+            }
+        }
+
+        function deleteSleepTime() {
+            sleepTime = [];
+            saveSleepTime();
+        }
+
+        saveSleepTimeBtn.addEventListener('click', () => {
+            const start = sleepStartTimeInput.value;
+            const end = sleepEndTimeInput.value;
+            if (start && end) {
+                sleepTime = [{ start, end }];
+                saveSleepTime();
+            } else {
+                alert('수면 시간을 모두 입력해주세요.');
+            }
+        });
+        
+        function saveStudyPlans() {
+            localStorage.setItem('studyPlans', JSON.stringify(studyPlans));
+            renderStudyPlans();
+        }
+
+        function renderStudyPlans() {
+            studyPlanList.innerHTML = '';
+            if (studyPlans.length === 0) {
+                const noItems = document.createElement('li');
+                noItems.classList.add('no-items');
+                noItems.textContent = '등록된 주간 공부 분량이 없습니다.';
+                studyPlanList.appendChild(noItems);
+            } else {
+                studyPlans.forEach((plan, index) => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <div class="list-item-content">
+                            <strong>${plan.subject}</strong>
+                            <span>주 ${plan.hours}시간</span>
+                        </div>
+                        <button class="list-delete-btn" data-index="${index}">삭제</button>
+                    `;
+                    studyPlanList.appendChild(li);
+                });
+                document.querySelectorAll('#studyPlanList .list-delete-btn').forEach(btn => {
+                    btn.addEventListener('click', deleteStudyPlan);
+                });
+            }
+        }
+
+        function deleteStudyPlan(event) {
+            const index = event.target.dataset.index;
+            studyPlans.splice(index, 1);
+            saveStudyPlans();
+        }
+
+        addStudyPlanBtn.addEventListener('click', () => {
+            const subject = studySubjectInput.value.trim();
+            const hours = parseInt(studyWeeklyHoursInput.value);
+            if (subject && hours >= 0) {
+                studyPlans.push({ subject, hours });
+                saveStudyPlans();
+                studySubjectInput.value = '';
+                studyWeeklyHoursInput.value = '5';
+            } else {
+                alert('과목명과 주간 목표 시간을 올바르게 입력해주세요.');
+            }
+        });
+
+        // 페이지 로드 시 기존 데이터 렌더링
+        renderAcademySchedules();
+        renderSleepTime();
+        renderStudyPlans();
+
+        // --- 플래너 생성 기능 ---
+        const aiPlannerTable = document.getElementById('aiPlannerTable').getElementsByTagName('tbody')[0];
+        const noAiPlannerData = document.getElementById('noAiPlannerData');
+        const displayAcademyScheduleList = document.getElementById('displayAcademyScheduleList');
+        const displayStudyPlanList = document.getElementById('displayStudyPlanList');
+        const educationWarning = document.getElementById('educationWarning');
+        const sleepWarning = document.getElementById('sleepWarning');
+        
+        function displayGeneratedPlanner() {
+             // // 함수가 호출될 때마다 로컬 스토리지에서 최신 데이터를 다시 불러옵니다.
+            academySchedules = JSON.parse(localStorage.getItem('academySchedules') || '[]');
+            sleepTime = JSON.parse(localStorage.getItem('sleepTime') || '[]');
+            studyPlans = JSON.parse(localStorage.getItem('studyPlans') || '[]');
+            userLevel = localStorage.getItem('userLevel');
+            
+            const allData = [...academySchedules, ...studyPlans, ...sleepTime];
+            if (allData.length > 0) {
+                noAiPlannerData.style.display = 'none';
+
+                // --- 주요 수정 사항: 경고 메시지 로직 추가 ---
+                // 1. 사교육(학원) 시간 경고
+                const totalAcademyMinutes = academySchedules.reduce((sum, schedule) => {
+                    const startMinutes = timeToMinutes(schedule.startTime);
+                    const endMinutes = timeToMinutes(schedule.endTime);
+                    if (endMinutes < startMinutes) { // 자정을 넘는 스케줄
+                        return sum + (24 * 60 - startMinutes + endMinutes);
+                    }
+                    return sum + (endMinutes - startMinutes);
+                }, 0);
+                const totalAcademyHours = totalAcademyMinutes / 60;
+                
+                let academyWarningMessage = '';
+                if (userLevel === 'middle' && totalAcademyHours > 25) {
+                    academyWarningMessage = `⚠️ 경고: 중학생의 사교육(학원) 시간이 주 ${totalAcademyHours.toFixed(1)}시간으로 권장 시간(25시간)을 초과했습니다.`;
+                } else if (userLevel === 'high' && totalAcademyHours > 20) {
+                    academyWarningMessage = `⚠️ 경고: 고등학생의 사교육(학원) 시간이 주 ${totalAcademyHours.toFixed(1)}시간으로 권장 시간(20시간)을 초과했습니다.`;
+                }
+
+                let academyWarning = document.getElementById('academyWarning');
+                if (academyWarningMessage) {
+                    academyWarning.textContent = academyWarningMessage;
+                    academyWarning.style.display = 'block';
+                } else {
+                    academyWarning.style.display = 'none';
+                }
+
+                // 2. 수면 시간 경고
+                let sleepDurationMinutes = 0;
+                const SLEEP_WARNING_THRESHOLD_MINUTES = 8 * 60; // 8시간
+                
+                if (sleepTime.length > 0) {
+                    const sleep = sleepTime[0];
+                    const sleepStartMinutes = timeToMinutes(sleep.start);
+                    const sleepEndMinutes = timeToMinutes(sleep.end);
+                    if (sleepEndMinutes > sleepStartMinutes) {
+                        sleepDurationMinutes = sleepEndMinutes - sleepStartMinutes;
+                    } else { // 자정을 넘는 경우
+                        sleepDurationMinutes = (24 * 60 - sleepStartMinutes) + sleepEndMinutes;
+                    }
+                }
+
+                sleepWarning.style.display = 'none'; // 기존 경고 숨기기
+                educationWarning.style.display = 'none'; // 기존 경고 숨기기
+
+                if (sleepDurationMinutes < SLEEP_WARNING_THRESHOLD_MINUTES && sleepDurationMinutes > 0) {
+                    const sleepHours = Math.floor(sleepDurationMinutes / 60);
+                    const sleepMins = sleepDurationMinutes % 60;
+                    sleepWarning.textContent = `⚠️ 경고: 수면 시간이 ${sleepHours}시간 ${sleepMins}분으로, 권장 수면 시간(8시간)에 미치지 못합니다.`;
+                    sleepWarning.style.display = 'block';
+                } else if (sleepTime.length > 0) {
+                    // 8시간은 넘었지만 학년별 권장 수면 시간이 아닐 경우
+                    if (userLevel === 'middle' && (sleepTime[0].start !== '23:00' || sleepTime[0].end !== '07:00')) {
+                        educationWarning.textContent = '중학생은 23시 취침, 7시 기상을 권장합니다.';
+                        educationWarning.style.display = 'block';
+                    }
+                    if (userLevel === 'high' && (sleepTime[0].start !== '00:00' || sleepTime[0].end !== '06:00')) {
+                        educationWarning.textContent = '고등학생은 24시 취침, 6시 기상을 권장합니다.';
+                        educationWarning.style.display = 'block';
+                    }
+                }
+                // --- 주요 수정 사항 끝 ---
+                
+                // 학원 스케줄 요약
+                displayAcademyScheduleList.innerHTML = '';
+                if (academySchedules.length > 0) {
+                    academySchedules.forEach(schedule => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<strong>${schedule.name}</strong> <span>${schedule.day} ${schedule.startTime} - ${schedule.endTime}</span>`;
+                        displayAcademyScheduleList.appendChild(li);
+                    });
+                } else {
+                    displayAcademyScheduleList.innerHTML = `<li class="no-generated-data">등록된 학원 스케줄이 없습니다.</li>`;
+                }
+
+                // 주간 공부 목표 요약
+                displayStudyPlanList.innerHTML = '';
+                if (studyPlans.length > 0) {
+                    studyPlans.forEach(plan => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<strong>${plan.subject}</strong> <span>주 ${plan.hours}시간</span>`;
+                        displayStudyPlanList.appendChild(li);
+                    });
+                } else {
+                    displayStudyPlanList.innerHTML = `<li class="no-generated-data">등록된 주간 공부 분량이 없습니다.</li>`;
+                }
+                
+                // AI 플래너 테이블 생성
+                generateAIStudyPlannerTable();
+
+            } else {
+                // 데이터가 하나도 없을 경우 메시지 표시
+                noAiPlannerData.style.display = 'block';
+                 // 데이터가 없을 때 경고 메시지 모두 숨기기
+                academyWarning.style.display = 'none';
+                sleepWarning.style.display = 'none';
+                educationWarning.style.display = 'none';
+
+                // 리스트와 테이블도 비워줍니다.
+                displayAcademyScheduleList.innerHTML = `<li class="no-generated-data">등록된 학원 스케줄이 없습니다.</li>`;
+                displayStudyPlanList.innerHTML = `<li class="no-generated-data">등록된 주간 공부 분량이 없습니다.</li>`;
+                aiPlannerTable.innerHTML = '';
+            }
+        }
+        
+        function generateAIStudyPlannerTable() {
+            const days = ['월', '화', '수', '목', '금', '토', '일'];
+            const hours = Array.from({ length: 24 * 2 }, (_, i) => i * 30); // 30분 단위
+
+            // 테이블 초기화
+            aiPlannerTable.innerHTML = '';
+            
+            // 데이터 맵 생성 (스케줄 우선순위: 수면 > 학원 > 식사 > 공부 > 휴식)
+            const scheduleMap = new Array(days.length).fill(null).map(() => new Array(hours.length).fill({ type: 'free', content: '' }));
+
+            // 수면 시간 처리
+            if (sleepTime.length > 0) {
+                const sleep = sleepTime[0];
+                const sleepStartMinutes = timeToMinutes(sleep.start);
+                const sleepEndMinutes = timeToMinutes(sleep.end);
+                
+                // 수면 시간은 모든 요일에 적용
+                for (let d = 0; d < days.length; d++) {
+                    for (let h = 0; h < hours.length; h++) {
+                        const currentMinutes = h * 30;
+                        if (isTimeBetween(currentMinutes, sleepStartMinutes, sleepEndMinutes)) {
+                            scheduleMap[d][h] = { type: 'sleep', content: '수면' };
+                        }
+                    }
+                }
+            }
+
+            // 학원 스케줄 처리
+            academySchedules.forEach(schedule => {
+                const dayIndex = days.indexOf(schedule.day);
+                if (dayIndex !== -1) {
+                    const startMinutes = timeToMinutes(schedule.startTime);
+                    const endMinutes = timeToMinutes(schedule.endTime);
+                    for (let h = 0; h < hours.length; h++) {
+                        const currentMinutes = h * 30;
+                        if (currentMinutes >= startMinutes && currentMinutes < endMinutes) {
+                            scheduleMap[dayIndex][h] = { type: 'academy', content: schedule.name };
+                        }
+                    }
+                }
+            });
+
+            // 식사 시간 처리 (고정)
+            const mealTimes = [
+                { start: '08:00', end: '09:00', content: '아침식사' },
+                { start: '12:00', end: '13:00', content: '점심식사' },
+                { start: '18:00', end: '19:00', content: '저녁식사' }
+            ];
+            mealTimes.forEach(meal => {
+                const startMinutes = timeToMinutes(meal.start);
+                const endMinutes = timeToMinutes(meal.end);
+                for (let d = 0; d < days.length; d++) {
+                    for (let h = 0; h < hours.length; h++) {
+                        const currentMinutes = h * 30;
+                        if (currentMinutes >= startMinutes && currentMinutes < endMinutes) {
+                            if (scheduleMap[d][h].type === 'free') {
+                                scheduleMap[d][h] = { type: 'meal', content: meal.content };
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 주간 공부 분량 배분
+            let totalStudyHours = studyPlans.reduce((sum, plan) => sum + plan.hours, 0);
+            const studyPlansToAllocate = JSON.parse(JSON.stringify(studyPlans)); // 원본 변경 방지
+            const studyColors = ['study-color-0', 'study-color-1', 'study-color-2', 'study-color-3', 'study-color-4', 'study-color-5', 'study-color-6', 'study-color-7'];
+
+            let studyCount = 0;
+            const freeBlocks = [];
+            for (let h = 0; h < hours.length; h++) {
+                for (let d = 0; d < days.length; d++) {
+                    if (scheduleMap[d][h].type === 'free') {
+                        freeBlocks.push({ day: d, hourIndex: h });
+                    }
+                }
+            }
+
+            // 자유 시간 블록을 무작위로 섞기
+            shuffleArray(freeBlocks);
+
+            let allocatedStudyMinutes = 0;
+            const studyPlanMap = new Map(studyPlansToAllocate.map(p => [p.subject, p.hours * 60]));
+            
+            freeBlocks.forEach(block => {
+                if (allocatedStudyMinutes >= totalStudyHours * 60) return;
+
+                // 과목별로 배분
+                for (const plan of studyPlansToAllocate) {
+                    if (studyPlanMap.get(plan.subject) > 0) {
+                        
+                        // 뽀모도로 공부 시간 (25분)
+                        if (allocatedStudyMinutes + 25 <= totalStudyHours * 60) {
+                            scheduleMap[block.day][block.hourIndex] = {
+                                type: `study-color-${studyPlans.indexOf(plan)}`,
+                                content: `${plan.subject} (25분)`
+                            };
+                            studyPlanMap.set(plan.subject, studyPlanMap.get(plan.subject) - 25);
+                            allocatedStudyMinutes += 25;
+                            
+                            // 뽀모도로 휴식 시간 (5분) - 다음 30분 블록의 절반에 할당
+                            const nextHourIndex = block.hourIndex; // 같은 30분 블록 내에서 처리
+                            // 이미 다른 스케줄이 있는 경우 덮어쓰지 않도록 수정
+                            if(scheduleMap[block.day][nextHourIndex].type === 'free' || scheduleMap[block.day][nextHourIndex].content.includes('25분')) {
+                                scheduleMap[block.day][nextHourIndex] = {
+                                    ...scheduleMap[block.day][nextHourIndex],
+                                    content: scheduleMap[block.day][nextHourIndex].content + ' / 휴식(5분)',
+                                    type: scheduleMap[block.day][nextHourIndex].type + ' pomodoro-break'
+                                };
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 배분되지 않은 공부 목표가 있는지 확인하고 경고 메시지 표시
+            const remainingStudyPlans = studyPlansToAllocate.filter(p => studyPlanMap.get(p.subject) > 0);
+            if (remainingStudyPlans.length > 0) {
+                let remainingText = '⚠️ 공부 목표가 모두 배분되지 않았습니다:\n';
+                remainingStudyPlans.forEach(p => {
+                    const remainingMinutes = studyPlanMap.get(p.subject);
+                    const remainingHours = Math.floor(remainingMinutes / 60);
+                    const remainingMins = remainingMinutes % 60;
+                    if (remainingHours > 0 || remainingMins > 0) {
+                        remainingText += `- ${p.subject}: ${remainingHours}시간 ${remainingMins}분 남음\n`;
+                    }
+                });
+                if (remainingText !== '⚠️ 공부 목표가 모두 배분되지 않았습니다:\n') {
+                    const warningDiv = document.createElement('div');
+                    warningDiv.classList.add('warning-message');
+                    warningDiv.textContent = remainingText;
+                    document.getElementById('aiPlannerTableContainer').prepend(warningDiv);
+                }
+            }
+
+
+            // 테이블 그리기
+            for (let h = 0; h < hours.length; h++) {
+                const tr = document.createElement('tr');
+                const timeLabelTd = document.createElement('td');
+                const hour = Math.floor(hours[h] / 60);
+                const minute = hours[h] % 60;
+                timeLabelTd.textContent = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+                timeLabelTd.classList.add('time-label');
+                tr.appendChild(timeLabelTd);
+
+                for (let d = 0; d < days.length; d++) {
+                    const td = document.createElement('td');
+                    const cellData = scheduleMap[d][h];
+                    if (cellData.type !== 'free') {
+                        td.textContent = cellData.content;
+                        td.classList.add(cellData.type.split(' ')); // class가 여러 개일 수 있으므로 split으로 처리
+                    }
+                    tr.appendChild(td);
+                }
+                aiPlannerTable.appendChild(tr);
+            }
+        }
+        
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function timeToMinutes(timeString) {
+            const [hours, minutes] = timeString.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        function isTimeBetween(currentTime, startTime, endTime) {
+            if (endTime > startTime) {
+                return currentTime >= startTime && currentTime < endTime;
+            } else { // 자정을 넘어가는 경우
+                return currentTime >= startTime || currentTime < endTime;
+            }
+        }
+        
+        resetTimer(); // 페이지 로드 시 타이머 초기 상태로 설정
+    </script>
+</body>
+</html>
