@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pomodoro-planner-v14'; // 캐시 버전 관리 (파일 변경 시 버전 변경)
+const CACHE_NAME = 'pomodoro-planner-v26'; // 캐시 버전 관리 (파일 변경 시 버전 변경)
 const urlsToCache = [
     '/',
     '/index.html',
